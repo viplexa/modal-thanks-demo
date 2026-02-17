@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>jQuery модалки + Спасибо</title>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        body.is-modal-open {
+            position: fixed;
+            width: 100%;
+        }
+
+        button {
+            padding: 10px 16px;
+            cursor: pointer;
+        }
+
+        /* ===== overlay ===== */
+        .modal-layer {
+            position: fixed;
+            inset: 0;
+            display: none;
+            z-index: 1000;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* ===== модалки ===== */
+        .modal-wrapper {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal {
+            display: none;
+            background: #fff;
+            padding: 20px;
+            width: 300px;
+            position: relative;
+        }
+
+        .modal.is-active {
+            display: block;
+        }
+
+        .modal__close {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+
+        /* ===== формы ===== */
+        .form input {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 6px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Примеры</h2>
+
+    <button data-modal-open="modal-form-callback">Форма «Звонок»</button>
+    <button data-modal-open="modal-form-feedback">Форма «Отзыв»</button>
+    <button id="open-thanks-only">Открыть «Спасибо» отдельно</button>
+
+    <!-- ===== СЛОЙ ===== -->
+    <div class="modal-layer" id="modal-layer" aria-hidden="true">
+        <div class="modal-overlay" data-modal-close></div>
+
+        <div class="modal-wrapper">
+            <!-- ===== ФОРМА 1 ===== -->
+            <div class="modal" id="modal-form-callback">
+                <button class="modal__close" data-modal-close>×</button>
+                <h3>Заказать звонок</h3>
+
+                <form class="form js-form">
+                    <input type="text" placeholder="Имя" required />
+                    <input type="tel" placeholder="Телефон" required />
+                    <button type="submit">Отправить</button>
+                </form>
+            </div>
+
+            <!-- ===== ФОРМА 2 ===== -->
+            <div class="modal" id="modal-form-feedback">
+                <button class="modal__close" data-modal-close>×</button>
+                <h3>Оставить отзыв</h3>
+
+                <form class="form js-form">
+                    <input type="text" placeholder="Отзыв" required />
+                    <button type="submit">Отправить</button>
+                </form>
+            </div>
+
+            <!-- ===== СПАСИБО ===== -->
+            <div class="modal" id="modal-thanks">
+                <button class="modal__close" data-modal-close>×</button>
+                <h3>Спасибо!</h3>
+                <p>Мы получили ваше сообщение.</p>
+            </div>
+        </div>
+    </div>
+
+    <h3>Пример inline-формы (не модалка)</h3>
+
+    <form class="inline-form js-inline-form">
+        <input type="text" name="name" placeholder="Имя" required>
+        <input type="tel" name="phone" placeholder="Телефон" required>
+        <button type="submit">Отправить inline-форму</button>
+    </form>
+
+    <section class="modal-instruction" style="margin-top: 30px; font-size: 14px; line-height: 1.6">
+        <h3>Инструкция по работе с модальными окнами</h3>
+
+        <p><strong>Как открыть модальное окно:</strong></p>
+        <ul>
+            <li>
+                На кнопку повесь атрибут
+                <code>data-modal-open="ID_МОДАЛКИ"</code>
+            </li>
+            <li>
+                <code>ID_МОДАЛКИ</code> — это <code>id</code> блока с классом
+                <code>.modal</code>
+            </li>
+        </ul>
+
+        <pre>
+&lt;button data-modal-open="modal-form-callback"&gt;
+    Открыть форму
+&lt;/button&gt;
+    </pre>
+
+        <p><strong>Доступные модальные окна в этом файле:</strong></p>
+        <ul>
+            <li><code>modal-form-callback</code> — форма «Заказать звонок»</li>
+            <li><code>modal-form-feedback</code> — форма «Оставить отзыв»</li>
+            <li><code>modal-thanks</code> — окно «Спасибо»</li>
+        </ul>
+
+        <p><strong>Как работает отправка формы:</strong></p>
+        <ul>
+            <li>
+                Любая форма с классом <code>.js-form или .js-inline-form</code> при успешной отправке
+            </li>
+            <li>Закрывает все открытые модалки</li>
+            <li>Оставляет\открывает overlay</li>
+            <li>Открывает окно <code>modal-thanks</code></li>
+        </ul>
+
+        <p><strong>Как открыть «Спасибо» без формы:</strong></p>
+        <pre>
+openThanksOnly();
+    </pre>
+
+        <p><strong>Как закрываются модальные окна:</strong></p>
+        <ul>
+            <li>Клик по крестику</li>
+            <li>Клик вне модального окна (по фону)</li>
+            <li>Клавиша <kbd>Esc</kbd></li>
+        </ul>
+
+        <p><strong>Плюсы текущей архитектуры:</strong></p>
+        <ul>
+            <li>Один общий overlay — нет дубликатов</li>
+            <li>Модалки независимы друг от друга</li>
+            <li>Лёгкая интеграция с AjaxForm / FetchIt / FormIt</li>
+            <li>Минимум JS и простая логика</li>
+            <li>Легко добавлять новые окна</li>
+            <li>Подходит для MODX и Fenom</li>
+        </ul>
+
+        <p><strong>Реальный пример из проектов (FetchIt / Ajax):</strong></p>
+
+        <p>
+            Если форма отправляется через FetchIt (или другой Ajax-механизм), и
+            событие <code>fetchit:success</code> означает успешную отправку —
+            достаточно в обработчике вызвать <code>openThanksOnly()</code>.
+        </p>
+
+        <pre>
+/* успешная отправка формы (РЕАЛЬНЫЙ КОД НА САЙТАХ У НАС) → спасибо */
+$(document).on("fetchit:success", function (e) {
+    openThanksOnly();
+});
+        </pre>
+
+        <p style="opacity: 0.7">Блок можно удалить перед публикацией сайта.</p>
+    </section>
+
+    <script>
+        function openLayer() {
+            $('body').addClass('is-modal-open');
+            $("#modal-layer").show().attr("aria-hidden", "false");
+        }
+
+        function closeLayer() {
+            $('body').removeClass('is-modal-open');
+            $("#modal-layer").hide().attr("aria-hidden", "true");
+        }
+
+        function closeAllModals() {
+            $(".modal").removeClass("is-active");
+        }
+
+        function openThanksOnly() {
+            closeAllModals();
+            openLayer();
+            $("#modal-thanks").addClass("is-active");
+        }
+
+        /* открыть любую модалку */
+        $("[data-modal-open]").on("click", function () {
+            const id = $(this).data("modal-open");
+
+            closeAllModals();
+            openLayer();
+
+            $("#" + id).addClass("is-active");
+        });
+
+        /* закрытие по кнопке */
+        $("[data-modal-close]").on("click", function () {
+            closeAllModals();
+            closeLayer();
+        });
+
+        /* закрытие по overlay */
+        $("#modal-layer").on("click", function (e) {
+            if ($(e.target).closest(".modal").length) {
+                return; // клик внутри модалки — ничего не делаем
+            }
+
+            closeAllModals();
+            closeLayer();
+        });
+
+        /* закрытие по клавише ESC */
+        $(document).on("keydown", function (e) {
+            if (e.key === "Escape") {
+                // если слой открыт — закрываем всё
+                if ($("#modal-layer").is(":visible")) {
+                    closeAllModals();
+                    closeLayer();
+                }
+            }
+        });
+
+        /* открыть спасибо отдельно */
+        $("#open-thanks-only").on("click", function () {
+            openThanksOnly();
+        });
+
+        /* отправка формы (ДЛЯ ДЕМОНСТРАЦИИ ПРИМЕРА) → спасибо */
+        $(".js-form, .js-inline-form").on("submit", function (e) {
+            e.preventDefault();
+
+            openThanksOnly();
+        });
+
+        /* успешная отправка формы (РЕАЛЬНЫЙ КОД НА САЙТАХ У НАС) → спасибо */
+        $(document).on("fetchit:success", function (e) {
+            openThanksOnly();
+        });
+    </script>
+</body>
+
+</html>
